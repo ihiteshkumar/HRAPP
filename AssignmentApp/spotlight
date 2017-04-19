@@ -1,0 +1,88 @@
+import UIKit
+import CoreSpotlight
+import MobileCoreServices
+
+struct Item {
+    var title: String
+    var category: String
+    var date: Date
+    var thumbnail: String
+}
+struct IntStack {
+    var items = [Int]()
+    mutating func add(x: Int) {
+        items.append(x) // All good!
+    }
+}
+
+@available(iOS 9.0, *)
+class SpotLightSearch: UIViewController {
+    
+    var searchableItems: [CSSearchableItem] = []
+    let domID: String = "com.hitesh.Hitesh"
+    
+    func areTheyEqual<T: Equatable>(x: T, _ y: T) -> Bool {
+        return x == y
+    }
+    
+    var objects = [
+        Item(title: "Ola Cabs",
+             category: "Now book your ola cabs via my app to get awesome cashbacks & weekly rush tickets",
+             date: Date(),
+             thumbnail: "http://images.hitesh.in/category/ola58736b4deab58.png"),
+        Item(title: "Food Combos",
+             category: "Now buy food combos via Hitesh",
+             date: Date(),
+             thumbnail: "http://images.hitesh.in/category/combo58736c25c4022.png"),
+        Item(title: "Daily Spends",
+             category: "Upload Any Bill and Get Weekly Rush Tickets",
+             date: Date(),
+             thumbnail: "http://images.hitesh.in/category/shopping58787ae3041f5.png")]
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.setSearchableObjects()
+    }
+    
+    /// CoreSpotlight Services : searchable objects
+    func setSearchableObjects() {
+        
+        // append searchable Items to Indexed
+        for item in objects {
+            // define Item Attribute Set
+            let attributeSet = CSSearchableItemAttributeSet(itemContentType: kUTTypeItem as String)
+            attributeSet.title = item.title
+            
+            // date formatter
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .medium
+            dateFormatter.timeStyle = .short
+            
+            attributeSet.contentDescription = item.category
+//            attributeSet.contentCreationDate = dateFormatter.date(from: "\(item.date)")
+            
+            // in this example we put optionnals images on Spotlight results
+            if let url = URL(string: item.thumbnail) {
+                if let data = try? Data(contentsOf: url){
+                    attributeSet.thumbnailData = data
+                }
+            }
+            // define search keywords
+            var keywords = item.title.components(separatedBy: " ")
+            keywords.append(item.category)
+            attributeSet.keywords = keywords
+            
+            // create searchable item
+            let searchItem = CSSearchableItem(uniqueIdentifier: item.title, domainIdentifier: domID, attributeSet: attributeSet)
+            searchableItems.append(searchItem)
+            
+        }
+        // On-device Index
+        CSSearchableIndex.default().indexSearchableItems(searchableItems) { (error) -> Void in
+            if error != nil {
+                print(error?.localizedDescription)
+            }else{
+                print("items indexed witch success!")
+            }
+        }
+    }
